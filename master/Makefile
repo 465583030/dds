@@ -1,7 +1,7 @@
 TAG?=latest
 
 all:
-	go build -o ./bin/download-master ./src/main.go
+	go build -o ./bin/download-master ./main.go
 
 run: all
 	./bin/download-master
