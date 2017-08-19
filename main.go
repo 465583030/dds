@@ -9,6 +9,7 @@ import (
 
 	"github.com/riclava/dds/api/handler"
 	"github.com/riclava/dds/cluster/config"
+	"github.com/riclava/dds/cluster/routines"
 )
 
 func main() {
@@ -39,6 +40,10 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// GRPC
+	go routines.MainRoutine(cfg)
+
+	// API
 	http.Handle("/api/", apiHandler)
 
 	log.Println("\ndds started using config file of", *configPath, "\nwith parameters", cfg.ToString())
