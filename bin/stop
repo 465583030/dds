@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# Get current abstract dirname
+CURRENT_DIR=$(cd "$(dirname "$0")";pwd)
+# define exec name
+EXEC_NAME="dds"
+# abstract process context
+PROCESS=${CURRENT_DIR}"/"${EXEC_NAME}
+
+# find the pid
+KILL_PID=`ps aux | grep -v 'grep' | grep ${PROCESS} | awk '{print $2}'`
+
+# do kill
+if [ ! -z "${KILL_PID}" ]; then
+    echo "Killing "${PROCESS}" with pid "${KILL_PID}" ..."
+    echo $KILL_PID | xargs kill -9
+else
+    echo "No such process "${PROCESS}" running ;-("
+fi

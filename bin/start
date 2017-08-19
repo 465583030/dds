@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# Get current abstract dirname
+CURRENT_DIR=$(cd "$(dirname "$0")";pwd)
+# define exec name
+EXEC_NAME="dds"
+# abstract process context
+PROCESS=${CURRENT_DIR}"/"${EXEC_NAME}
+
+if [ -f "${PROCESS}" ]; then
+    ${PROCESS} --conf=${CURRENT_DIR}"/../conf/config.json"
+else
+    echo "No such executable file "${PROCESS}" :-("
+fi

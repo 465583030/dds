@@ -1,0 +1,19 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "g3z4plpw9F/ho3hdJb+X/bN/OgE=",
+			"path": "github.com/emicklei/go-restful",
+			"revision": "68c9750c36bb8cb433f1b88c807b4b30df4acc40",
+			"revisionTime": "2017-07-04T05:34:23Z"
+		},
+		{
+			"checksumSHA1": "rmsBHtFpV3osid71XnTZBo/b3bU=",
+			"path": "github.com/emicklei/go-restful/log",
+			"revision": "68c9750c36bb8cb433f1b88c807b4b30df4acc40",
+			"revisionTime": "2017-07-04T05:34:23Z"
+		}
+	],
+	"rootPath": "github.com/riclava/dds"
+}
