@@ -9,8 +9,12 @@ import (
 
 	"github.com/riclava/dds/api/handler"
 	"github.com/riclava/dds/cluster/config"
+	"github.com/riclava/dds/cluster/friends"
 	"github.com/riclava/dds/cluster/routines"
 )
+
+var users friends.Users
+var frands friends.Friends
 
 func main() {
 
@@ -39,6 +43,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// initialize users and friends
 
 	// GRPC
 	go routines.MainRoutine(cfg)

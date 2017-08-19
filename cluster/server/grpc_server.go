@@ -1,6 +1,7 @@
 package server
 
 import (
+	"log"
 	"net"
 
 	"github.com/riclava/dds/cluster/ddservice"
@@ -10,15 +11,12 @@ import (
 	"google.golang.org/grpc/reflection"
 )
 
-const (
-	port = ":50051"
-)
-
 // GRPCServer is used to implement ddservice.CallServer.
 type GRPCServer struct{}
 
 // Call implement ddservice.CallServer interface
 func (s *GRPCServer) Call(ctx context.Context, in *ddservice.DDSRequest) (*ddservice.DDSResponse, error) {
+	log.Println("Recieved a request from ", in.Ip, ", payload: ", in.Payload)
 	return &ddservice.DDSResponse{Payload: in.Payload}, nil
 }
 
