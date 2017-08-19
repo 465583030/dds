@@ -35,4 +35,5 @@ func Serve(addr string) error {
 	if err := s.Serve(lis); err != nil {
 		return err
 	}
+	return nil
 }
