@@ -7,7 +7,6 @@ import (
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
-	pb "google.golang.org/grpc/examples/helloworld/helloworld"
 	"google.golang.org/grpc/reflection"
 )
 
@@ -30,7 +29,7 @@ func Serve(addr string) error {
 		return err
 	}
 	s := grpc.NewServer()
-	pb.RegisterGreeterServer(s, &GRPCServer{})
+	ddservice.RegisterDDServiceServer(s, &GRPCServer{})
 	// Register reflection service on gRPC server.
 	reflection.Register(s)
 	if err := s.Serve(lis); err != nil {
