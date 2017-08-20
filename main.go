@@ -13,8 +13,8 @@ import (
 	"github.com/riclava/dds/cluster/routines"
 )
 
-var users friends.Users
-var frands friends.Friends
+var users *friends.Users
+var frands *friends.Friends
 
 func main() {
 
@@ -39,17 +39,26 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// Users & Friends
+	users = &friends.Users{}
+	usr := friends.User{
+		Username: "ricl",
+	}
+	(*users)[usr.Username] = usr
+
+	frands = &friends.Friends{}
+
+	// GRPC
+	go routines.MainRoutine(users, frands, cfg)
+
+	// file server
+	http.Handle("/", http.FileServer(http.Dir(cfg.Directory)))
+
+	// API
 	apiHandler, err := handler.CreateAPIHandler(cfg)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	// initialize users and friends
-
-	// GRPC
-	go routines.MainRoutine(cfg)
-
-	// API
 	http.Handle("/api/", apiHandler)
 
 	log.Println("\ndds started using config file of", *configPath, "\nwith parameters", cfg.ToString())

@@ -10,6 +10,7 @@ import (
 	"github.com/riclava/dds/api/controller"
 	"github.com/riclava/dds/api/models"
 	"github.com/riclava/dds/cluster/config"
+	"github.com/riclava/dds/cluster/tasks"
 )
 
 const (
@@ -42,7 +43,15 @@ func CreateAPIHandler(cfg *config.Config) (http.Handler, error) {
 	container.Add(webService)
 
 	webService.Route(
-		webService.GET("/").To(apiHandler.handlerGetRoot).Writes(models.Response{}))
+		webService.GET("/").To(apiHandler.handleGetRoot).Writes(models.Response{}))
+	webService.Route(
+		webService.GET("/task").To(apiHandler.handleTaskList).Writes(tasks.HTTPTasks{}))
+	webService.Route(
+		webService.PUT("/task").To(apiHandler.handleTaskPut).Writes(models.Response{}))
+	webService.Route(
+		webService.POST("/friend").To(apiHandler.handleFriendPost).Writes(models.Response{}))
+	webService.Route(
+		webService.DELETE("/friend").To(apiHandler.handleFriendDelete).Writes(models.Response{}))
 
 	return container, nil
 }
@@ -71,6 +80,22 @@ func formatResponseLog(response *restful.Response, request *restful.Request) str
 		request.Request.RemoteAddr, response.StatusCode())
 }
 
-func (apiHandler *APIHandler) handlerGetRoot(request *restful.Request, response *restful.Response) {
+func (apiHandler *APIHandler) handleGetRoot(request *restful.Request, response *restful.Response) {
 	controller.Index(request, response)
+}
+
+func (apiHandler *APIHandler) handleTaskList(request *restful.Request, response *restful.Response) {
+	controller.ListTask(request, response)
+}
+
+func (apiHandler *APIHandler) handleTaskPut(request *restful.Request, response *restful.Response) {
+	controller.PutTask(request, response)
+}
+
+func (apiHandler *APIHandler) handleFriendPost(request *restful.Request, response *restful.Response) {
+	controller.AddFriend(request, response)
+}
+
+func (apiHandler *APIHandler) handleFriendDelete(request *restful.Request, response *restful.Response) {
+	controller.DeleteFriend(request, response)
 }

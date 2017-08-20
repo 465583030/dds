@@ -106,3 +106,29 @@ func Get(url string, headers map[string]string) (string, error) {
 
 	return string(body), nil
 }
+
+// Head data header from server
+func Head(url string, headers map[string]string) (*http.Header, error) {
+	client := http.Client{}
+
+	req, err := http.NewRequest("HEAD", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	for key, value := range headers {
+		req.Header.Set(key, value)
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+
+	if !(resp.StatusCode >= 200 && resp.StatusCode < 300) {
+		return nil, errors.New("Http response code not valid [" + strconv.Itoa(resp.StatusCode) + "]")
+	}
+
+	return &resp.Header, nil
+}
