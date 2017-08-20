@@ -8,3 +8,9 @@ type Friend struct {
 
 // Friends is a set of friend
 type Friends map[string]Friend
+
+// FriendPair friend pair
+type FriendPair struct {
+	You    Friend `json:"you"`
+	Myself Friend `json:"myself"`
+}

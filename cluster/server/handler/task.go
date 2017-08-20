@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -18,13 +19,13 @@ import (
 // HTTPTaskChannel is the global channel for HTTPTasks
 var HTTPTaskChannel = make(chan tasks.HTTPTask, 10240)
 
-// key => unixnano() | filename | timeout sec
+// key => unixnano()
 // if task is timed out, we will push back to HTTPTaskChannel
-var fetchedTasks = make(map[string]tasks.HTTPTask)
+var fetchedTasks = make(map[int64]tasks.HTTPTask)
 
-// key => unixnano() | filename | block number
-// value => blocks
-var files = make(map[string]map[string]tasks.HTTPTaskBlock)
+// key => filename | mark when file is finished
+// value => block range
+var files = make(map[string]map[int64]int64)
 
 // TaskHandler handle all task request from node
 type TaskHandler struct {
@@ -35,9 +36,23 @@ type TaskHandler struct {
 // HandleFetch handle fetch task request
 func (handler *TaskHandler) HandleFetch(in *ddservice.DDSRequest) ddservice.DDSResponse {
 
-	response := ddservice.DDSResponse{Payload: "fetch task success"}
+	// check if some sended out task is timedout
+	for timestamp, task := range fetchedTasks {
+		if time.Now().UnixNano()-timestamp > 15*1000*1000 {
+			//expired
+			HTTPTaskChannel <- task
+			delete(fetchedTasks, timestamp)
+		}
+	}
 
-	return response
+	httpTask := <-HTTPTaskChannel
+	timeKey, err := strconv.ParseInt(httpTask.Filename[strings.LastIndex(httpTask.Filename, "|"):len(httpTask.Filename)], 10, 0)
+	if err != nil {
+		return *(makeDDSResponse(-1, "can not process task"))
+	}
+	fetchedTasks[timeKey] = httpTask
+	payload, _ := json.Marshal(httpTask)
+	return *(makeDDSResponse(0, string(payload)))
 }
 
 // HandlePut handle put task request
@@ -48,6 +63,8 @@ func (handler *TaskHandler) HandlePut(in *ddservice.DDSRequest) ddservice.DDSRes
 	if err != nil {
 		return *(makeDDSResponse(-1, "parse user task failed"))
 	}
+
+	log.Println(usrTask)
 
 	// split
 	// head file information
@@ -64,9 +81,9 @@ func (handler *TaskHandler) HandlePut(in *ddservice.DDSRequest) ddservice.DDSRes
 	var blockSize int64 = 512 * 1024 // 512 KB
 	var i int64
 	filename := usrTask.URL[strings.LastIndex(usrTask.URL, "/"):len(usrTask.URL)]
-	filename = filename[1:len(filename)]
-	filename = fmt.Sprintf("%d%s%s", time.Now().UnixNano(), "|", filename)
+	filename = fmt.Sprintf("%s|%d", filename[1:len(filename)], time.Now().UnixNano())
 	endpoint := fmt.Sprintf("%s:%d", handler.Config.Host, handler.Config.RPCPort)
+	ranges := make(map[int64]int64)
 	for i = 0; i < iContentLength; i += blockSize {
 		end := i + blockSize - 1
 		if end > iContentLength {
@@ -79,18 +96,47 @@ func (handler *TaskHandler) HandlePut(in *ddservice.DDSRequest) ddservice.DDSRes
 			RangeEnd:   end,
 			Filename:   filename,
 		}
-		log.Println(httpTask)
+		ranges[i] = end
 		HTTPTaskChannel <- httpTask
 	}
+	files[filename] = ranges
 
 	return *(makeDDSResponse(0, "success"))
 }
 
 // HandleSubmit handle submit task request
 func (handler *TaskHandler) HandleSubmit(in *ddservice.DDSRequest) ddservice.DDSResponse {
-	response := ddservice.DDSResponse{Payload: "submit task success"}
 
-	return response
+	payload := in.Payload
+	var block tasks.HTTPTaskBlock
+	err := json.Unmarshal([]byte(payload), &block)
+	if err != nil {
+		return *(makeDDSResponse(-1, "parse block failed"))
+	}
+	ranges := files[block.Filename]
+	if _, ok := ranges[block.RangeStart]; !ok {
+		return *(makeDDSResponse(-2, "task may already submitted"))
+	}
+
+	tmpFilename := ""
+	// write block
+	if runtime.GOOS == "windows" {
+		tmpFilename = fmt.Sprintf("%s\\%s", handler.Config.Directory, block.Filename)
+	} else {
+		tmpFilename = fmt.Sprintf("%s/%s", handler.Config.Directory, block.Filename)
+	}
+
+	if err := utils.WriteFileBlock(tmpFilename, block.Block, block.RangeStart, block.RangeEnd); err != nil {
+		return *(makeDDSResponse(-3, "write block to disk failed"))
+	}
+
+	delete(ranges, block.RangeStart)
+	if len(ranges) == 0 {
+		// file is done ;-)
+		delete(files, block.Filename)
+	}
+
+	return *(makeDDSResponse(0, "success"))
 }
 
 func makeDDSResponse(code int, data string) *ddservice.DDSResponse {

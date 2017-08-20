@@ -48,8 +48,19 @@ func main() {
 
 	frands = &friends.Friends{}
 
+	myself := &friends.Friend{}
+	myself.Username = cfg.Username
+	myself.Host = cfg.Host
+	myself.Port = cfg.RPCPort
+	myself.Token = cfg.Token
+
+	(*frands)[myself.Username] = *myself
+
 	// GRPC
 	go routines.MainRoutine(users, frands, cfg)
+
+	// Process task
+	go routines.TaskProcessRoutine(cfg, myself, frands)
 
 	// file server
 	http.Handle("/", http.FileServer(http.Dir(cfg.Directory)))

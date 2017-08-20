@@ -29,7 +29,7 @@ type GRPCServer struct {
 // 3 => Add Friend
 // 4 => Delete Friend
 func (s *GRPCServer) Call(ctx context.Context, in *ddservice.DDSRequest) (*ddservice.DDSResponse, error) {
-	log.Println("Recieved a request from ", in.Ip, ", payload: ", in.Payload)
+	log.Println("Recieved a request from ", in.Ip, ", cid: ", in.Cid)
 	var response ddservice.DDSResponse
 	switch in.Cid {
 	case constants.CidHTTPTaskFetch:
@@ -44,7 +44,10 @@ func (s *GRPCServer) Call(ctx context.Context, in *ddservice.DDSRequest) (*ddser
 		response = hdl.HandlePut(in)
 		break
 	case constants.CidHTTPTaskSubmit:
-		hdl := handler.TaskHandler{}
+		hdl := handler.TaskHandler{
+			Friends: s.Friends,
+			Config:  s.Config,
+		}
 		response = hdl.HandleSubmit(in)
 		break
 	case constants.CidFriendAdd:
