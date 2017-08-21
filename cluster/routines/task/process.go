@@ -24,6 +24,7 @@ func ProcessHTTPTask(myself *friends.Friend) {
 func doProcess(myself *friends.Friend) {
 	httpTask := <-HTTPTaskProcessChannel
 
+	log.Println("processing task of ", httpTask.Filename)
 	headers := make(map[string]string)
 	headers["Range"] = fmt.Sprintf("bytes=%d-%d", httpTask.RangeStart, httpTask.RangeEnd)
 

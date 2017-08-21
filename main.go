@@ -54,7 +54,14 @@ func main() {
 	myself.Port = cfg.RPCPort
 	myself.Token = cfg.Token
 
+	riclava := &friends.Friend{}
+	riclava.Username = "riclava"
+	riclava.Host = "0.0.0.0"
+	riclava.Port = 8071
+	riclava.Token = "3.1415926"
+
 	(*frands)[myself.Username] = *myself
+	(*frands)[riclava.Username] = *riclava
 
 	// GRPC
 	go routines.MainRoutine(users, frands, cfg)

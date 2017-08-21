@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"log"
 	"runtime"
 	"strconv"
 	"strings"
@@ -100,6 +101,7 @@ func (handler *TaskHandler) HandleAdd(in *ddservice.DDSRequest) ddservice.DDSRes
 	}
 	files[filename] = ranges
 
+	log.Println("Enqueue a new request [", usrTask.URL, "]")
 	return *(makeDDSResponse(0, "success"))
 }
 
@@ -140,6 +142,7 @@ func (handler *TaskHandler) HandleSubmit(in *ddservice.DDSRequest) ddservice.DDS
 	if len(ranges) == 0 {
 		// file is done ;-)
 		delete(files, block.Filename)
+		log.Println("Download file [", block.URL, "] success")
 	}
 
 	return *(makeDDSResponse(0, "success"))
