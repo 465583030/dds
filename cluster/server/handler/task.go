@@ -1,9 +1,9 @@
 package handler
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"log"
 	"runtime"
 	"strconv"
 	"strings"
@@ -38,7 +38,8 @@ func (handler *TaskHandler) HandleFetch(in *ddservice.DDSRequest) ddservice.DDSR
 
 	// check if some sended out task is timedout
 	for timestamp, task := range fetchedTasks {
-		if time.Now().UnixNano()-timestamp > 15*1000*1000 {
+		distance := time.Now().UnixNano() - timestamp
+		if distance > 300*1000*1000*1000 {
 			//expired
 			HTTPTaskChannel <- task
 			delete(fetchedTasks, timestamp)
@@ -46,7 +47,7 @@ func (handler *TaskHandler) HandleFetch(in *ddservice.DDSRequest) ddservice.DDSR
 	}
 
 	httpTask := <-HTTPTaskChannel
-	timeKey, err := strconv.ParseInt(httpTask.Filename[strings.LastIndex(httpTask.Filename, "|"):len(httpTask.Filename)], 10, 0)
+	timeKey, err := strconv.ParseInt(httpTask.Filename[strings.LastIndex(httpTask.Filename, "|")+1:len(httpTask.Filename)], 10, 0)
 	if err != nil {
 		return *(makeDDSResponse(-1, "can not process task"))
 	}
@@ -55,16 +56,14 @@ func (handler *TaskHandler) HandleFetch(in *ddservice.DDSRequest) ddservice.DDSR
 	return *(makeDDSResponse(0, string(payload)))
 }
 
-// HandlePut handle put task request
-func (handler *TaskHandler) HandlePut(in *ddservice.DDSRequest) ddservice.DDSResponse {
+// HandleAdd handle put task request
+func (handler *TaskHandler) HandleAdd(in *ddservice.DDSRequest) ddservice.DDSResponse {
 	payload := in.Payload
 	var usrTask tasks.UserHTTPTask
 	err := json.Unmarshal([]byte(payload), &usrTask)
 	if err != nil {
 		return *(makeDDSResponse(-1, "parse user task failed"))
 	}
-
-	log.Println(usrTask)
 
 	// split
 	// head file information
@@ -106,7 +105,6 @@ func (handler *TaskHandler) HandlePut(in *ddservice.DDSRequest) ddservice.DDSRes
 
 // HandleSubmit handle submit task request
 func (handler *TaskHandler) HandleSubmit(in *ddservice.DDSRequest) ddservice.DDSResponse {
-
 	payload := in.Payload
 	var block tasks.HTTPTaskBlock
 	err := json.Unmarshal([]byte(payload), &block)
@@ -118,17 +116,25 @@ func (handler *TaskHandler) HandleSubmit(in *ddservice.DDSRequest) ddservice.DDS
 		return *(makeDDSResponse(-2, "task may already submitted"))
 	}
 
-	tmpFilename := ""
+	tmpFilename := block.Filename[0:strings.LastIndex(block.Filename, "|")]
 	// write block
 	if runtime.GOOS == "windows" {
-		tmpFilename = fmt.Sprintf("%s\\%s", handler.Config.Directory, block.Filename)
+		tmpFilename = fmt.Sprintf("%s\\%s", handler.Config.Directory, tmpFilename)
 	} else {
-		tmpFilename = fmt.Sprintf("%s/%s", handler.Config.Directory, block.Filename)
+		tmpFilename = fmt.Sprintf("%s/%s", handler.Config.Directory, tmpFilename)
 	}
 
-	if err := utils.WriteFileBlock(tmpFilename, block.Block, block.RangeStart, block.RangeEnd); err != nil {
-		return *(makeDDSResponse(-3, "write block to disk failed"))
+	rawBlock, err := base64.StdEncoding.DecodeString(block.Block)
+	if err != nil {
+		return *(makeDDSResponse(-3, "decode block failed"))
 	}
+
+	if err := utils.WriteFileBlock(tmpFilename, rawBlock, block.RangeStart, block.RangeEnd); err != nil {
+		return *(makeDDSResponse(-4, "write block to disk failed"))
+	}
+
+	timeKey, err := strconv.ParseInt(block.Filename[strings.LastIndex(block.Filename, "|")+1:len(block.Filename)], 10, 0)
+	delete(fetchedTasks, timeKey)
 
 	delete(ranges, block.RangeStart)
 	if len(ranges) == 0 {

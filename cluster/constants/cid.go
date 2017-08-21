@@ -3,8 +3,8 @@ package constants
 const (
 	//CidHTTPTaskFetch is http task fetch grpc data change id
 	CidHTTPTaskFetch = 1
-	//CidHTTPTaskPut is http task put grpc data change id
-	CidHTTPTaskPut = 2
+	//CidHTTPTaskAdd is http task put grpc data change id
+	CidHTTPTaskAdd = 2
 	// CidHTTPTaskSubmit is http task submit grpc data change id
 	CidHTTPTaskSubmit = 3
 

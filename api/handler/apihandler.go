@@ -23,7 +23,7 @@ const (
 
 // APIHandler is a representation of API handler
 type APIHandler struct {
-	token string
+	Config *config.Config
 }
 
 // CreateAPIHandler create an API handler for restful API
@@ -31,7 +31,7 @@ func CreateAPIHandler(cfg *config.Config) (http.Handler, error) {
 
 	container := restful.NewContainer()
 	apiHandler := APIHandler{
-		token: cfg.Token,
+		Config: cfg,
 	}
 
 	webService := new(restful.WebService)
@@ -47,7 +47,7 @@ func CreateAPIHandler(cfg *config.Config) (http.Handler, error) {
 	webService.Route(
 		webService.GET("/task").To(apiHandler.handleTaskList).Writes(tasks.HTTPTasks{}))
 	webService.Route(
-		webService.PUT("/task").To(apiHandler.handleTaskPut).Writes(models.Response{}))
+		webService.POST("/task").To(apiHandler.handleTaskAdd).Writes(models.Response{}))
 	webService.Route(
 		webService.POST("/friend").To(apiHandler.handleFriendPost).Writes(models.Response{}))
 	webService.Route(
@@ -88,8 +88,8 @@ func (apiHandler *APIHandler) handleTaskList(request *restful.Request, response 
 	controller.ListTask(request, response)
 }
 
-func (apiHandler *APIHandler) handleTaskPut(request *restful.Request, response *restful.Response) {
-	controller.PutTask(request, response)
+func (apiHandler *APIHandler) handleTaskAdd(request *restful.Request, response *restful.Response) {
+	controller.AddTask(request, response, apiHandler.Config)
 }
 
 func (apiHandler *APIHandler) handleFriendPost(request *restful.Request, response *restful.Response) {

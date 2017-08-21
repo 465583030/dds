@@ -1,5 +1,11 @@
 package tasks
 
+import (
+	"encoding/json"
+
+	"github.com/riclava/dds/cluster/ddservice"
+)
+
 // UserHTTPTask frontend user put task
 type UserHTTPTask struct {
 	URL string `json:"url"`
@@ -28,3 +34,18 @@ type TaskResponse struct {
 
 // HTTPTasks http task list
 type HTTPTasks []HTTPTask
+
+// ParseTaskResponseFromDDSResponse parse data to DDSResponse -> TaskResponse
+func ParseTaskResponseFromDDSResponse(payload string) (*TaskResponse, error) {
+	var ddsResponse ddservice.DDSResponse
+	err := json.Unmarshal([]byte(payload), &ddsResponse)
+	if err != nil {
+		return nil, err
+	}
+	var taskResponse TaskResponse
+	err = json.Unmarshal([]byte(ddsResponse.Payload), &taskResponse)
+	if err != nil {
+		return nil, err
+	}
+	return &taskResponse, nil
+}
