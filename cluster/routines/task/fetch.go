@@ -44,10 +44,13 @@ func doFetch(endpoint string, myself *friends.Friend) {
 
 // FetchTask fetch task from friends
 func FetchTask(myself *friends.Friend, frands *friends.Friends) {
+
 	for {
-		for _, friend := range *frands {
-			doFetch(fmt.Sprintf("%s:%d", friend.Host, friend.Port), myself)
+		for _, friend := range frands.Friends {
+			go doFetch(fmt.Sprintf("%s:%d", friend.Host, friend.Port), myself)
+			time.Sleep(500 * time.Millisecond)
 		}
-		time.Sleep(50 * time.Millisecond)
+		time.Sleep(500 * time.Millisecond)
 	}
+
 }

@@ -17,17 +17,11 @@ import (
 
 // GRPCServer is used to implement ddservice.CallServer.
 type GRPCServer struct {
-	Users   *friends.Users
-	Friends *friends.Friends
+	Friands *friends.Friends
 	Config  *config.Config
 }
 
 // Call implement ddservice.CallServer interface
-// 1 => Fetch Task
-// 2 => Put Task
-// 3 => Submit Task
-// 3 => Add Friend
-// 4 => Delete Friend
 func (s *GRPCServer) Call(ctx context.Context, in *ddservice.DDSRequest) (*ddservice.DDSResponse, error) {
 	var response ddservice.DDSResponse
 	switch in.Cid {
@@ -37,31 +31,33 @@ func (s *GRPCServer) Call(ctx context.Context, in *ddservice.DDSRequest) (*ddser
 		break
 	case constants.CidHTTPTaskAdd:
 		hdl := handler.TaskHandler{
-			Friends: s.Friends,
+			Friands: s.Friands,
 			Config:  s.Config,
 		}
 		response = hdl.HandleAdd(in)
 		break
 	case constants.CidHTTPTaskSubmit:
 		hdl := handler.TaskHandler{
-			Friends: s.Friends,
+			Friands: s.Friands,
 			Config:  s.Config,
 		}
 		response = hdl.HandleSubmit(in)
 		break
 	case constants.CidFriendAdd:
 		hdl := handler.FriendHandler{
-			Users:   s.Users,
-			Friends: s.Friends,
+			Friands: s.Friands,
 		}
 		response = hdl.HandleAdd(in)
 		break
 	case constants.CidFriendDelete:
 		hdl := handler.FriendHandler{
-			Users:   s.Users,
-			Friends: s.Friends,
+			Friands: s.Friands,
 		}
 		response = hdl.HandleDelete(in)
+		break
+	case constants.CidEcho:
+		hdl := handler.EchoHandler{}
+		response = hdl.HandleEcho(in)
 		break
 	default:
 		msg := "data exchange id (cid) invalid"
@@ -73,15 +69,14 @@ func (s *GRPCServer) Call(ctx context.Context, in *ddservice.DDSRequest) (*ddser
 }
 
 // Serve start server of grpc
-func Serve(addr string, users *friends.Users, friends *friends.Friends, config *config.Config) error {
+func Serve(addr string, friands *friends.Friends, config *config.Config) error {
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
 		return err
 	}
 	s := grpc.NewServer()
 	ddservice.RegisterDDServiceServer(s, &GRPCServer{
-		Users:   users,
-		Friends: friends,
+		Friands: friands,
 		Config:  config,
 	})
 	// Register reflection service on gRPC server.

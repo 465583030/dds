@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/riclava/dds/cluster/friends"
+
 	restful "github.com/emicklei/go-restful"
 	"github.com/riclava/dds/api/controller"
 	"github.com/riclava/dds/api/models"
@@ -23,15 +25,17 @@ const (
 
 // APIHandler is a representation of API handler
 type APIHandler struct {
-	Config *config.Config
+	Config  *config.Config
+	Friends *friends.Friends
 }
 
 // CreateAPIHandler create an API handler for restful API
-func CreateAPIHandler(cfg *config.Config) (http.Handler, error) {
+func CreateAPIHandler(cfg *config.Config, frands *friends.Friends) (http.Handler, error) {
 
 	container := restful.NewContainer()
 	apiHandler := APIHandler{
-		Config: cfg,
+		Config:  cfg,
+		Friends: frands,
 	}
 
 	webService := new(restful.WebService)
@@ -93,9 +97,9 @@ func (apiHandler *APIHandler) handleTaskAdd(request *restful.Request, response *
 }
 
 func (apiHandler *APIHandler) handleFriendPost(request *restful.Request, response *restful.Response) {
-	controller.AddFriend(request, response)
+	controller.AddFriend(request, response, apiHandler.Friends)
 }
 
 func (apiHandler *APIHandler) handleFriendDelete(request *restful.Request, response *restful.Response) {
-	controller.DeleteFriend(request, response)
+	controller.DeleteFriend(request, response, apiHandler.Friends)
 }

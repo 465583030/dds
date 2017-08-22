@@ -10,8 +10,7 @@ import (
 // FriendHandler handle all task request from node
 type FriendHandler struct {
 	Myself  *friends.Friend
-	Users   *friends.Users
-	Friends *friends.Friends
+	Friands *friends.Friends
 }
 
 // HandleAdd handle add friend request
@@ -26,8 +25,7 @@ func (handler *FriendHandler) HandleAdd(in *ddservice.DDSRequest) ddservice.DDSR
 	if !(friendPair.Myself.Username == handler.Myself.Username && friendPair.Myself.Token == handler.Myself.Token) {
 		return *(makeDDSResponse(-2, "you've not provide valid information"))
 	}
-	(*handler.Friends)[friendPair.You.Username] = friendPair.You
-	// TODO flush to disk
+	handler.Friands.AddNewFriend(&friendPair.You)
 
 	return *(makeDDSResponse(0, "success"))
 }
@@ -44,8 +42,8 @@ func (handler *FriendHandler) HandleDelete(in *ddservice.DDSRequest) ddservice.D
 	if !(friendPair.Myself.Username == handler.Myself.Username && friendPair.Myself.Token == handler.Myself.Token) {
 		return *(makeDDSResponse(-2, "you've not provide valid information"))
 	}
-	delete(*handler.Friends, friendPair.You.Username)
-	// TODO flush to disk
+
+	handler.Friands.DeleteFriend(&friendPair.You)
 
 	return *(makeDDSResponse(0, "success"))
 }

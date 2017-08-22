@@ -10,8 +10,8 @@ import (
 )
 
 // MainRoutine running a grpc server with params
-func MainRoutine(users *friends.Users, friends *friends.Friends, config *config.Config) {
-	if err := server.Serve(fmt.Sprintf("%s:%d", config.Host, config.RPCPort), users, friends, config); err != nil {
+func MainRoutine(friends *friends.Friends, config *config.Config) {
+	if err := server.Serve(fmt.Sprintf("%s:%d", config.Host, config.RPCPort), friends, config); err != nil {
 		log.Fatal(err)
 	}
 }

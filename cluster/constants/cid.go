@@ -12,4 +12,7 @@ const (
 	CidFriendAdd = 4
 	// CidFriendDelete is friend delete grpc data change id
 	CidFriendDelete = 5
+
+	// CidEcho is check whether service is alive
+	CidEcho = 6
 )

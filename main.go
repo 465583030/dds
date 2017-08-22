@@ -13,40 +13,56 @@ import (
 	"github.com/riclava/dds/cluster/routines"
 )
 
-var users *friends.Users
-var frands *friends.Friends
+var friands *friends.Friends
 
-func main() {
+const (
+	defaultLinuxConfigPath   = "/usr/local/services/dds/conf/config.json"
+	defaultWindowsConfigPath = "C:\\Program Files\\dds\\conf\\config.json"
+	usage                    = "\"/usr/local/services/dds/conf/config.json\""
 
-	const (
-		defaultLinuxConfigPath   = "/usr/local/services/dds/conf/config.json"
-		defaultWindowsConfigPath = "C:\\Program Files\\dds\\conf\\config.json"
-		usage                    = "\"/usr/local/services/dds/conf/config.json\""
-	)
+	defaultLinuxFriendsConfigPath   = "/usr/local/services/dds/conf/friends.json"
+	defaultWindowsFriendsConfigPath = "C:\\Program Files\\dds\\conf\\friends.json"
+	usageFriends                    = "\"/usr/local/services/dds/conf/friends.json\""
+)
 
+func loadConfig() (*config.Config, *friends.Friends) {
 	defaultConfigPath := ""
 	if runtime.GOOS == "windows" { //windows
 		defaultConfigPath = defaultWindowsConfigPath
 	} else { //linux
 		defaultConfigPath = defaultLinuxConfigPath
 	}
-
 	configPath := flag.String("conf", defaultConfigPath, usage)
+
+	defaultConfigFriendsPath := ""
+	if runtime.GOOS == "windows" { //windows
+		defaultConfigFriendsPath = defaultWindowsFriendsConfigPath
+	} else { //linux
+		defaultConfigFriendsPath = defaultLinuxFriendsConfigPath
+	}
+	configFriendsPath := flag.String("friends", defaultConfigFriendsPath, usageFriends)
+
 	flag.Parse()
 
-	cfg := &config.Config{}
-	if err := cfg.ReadConfig(*configPath); err != nil {
+	cfg := &config.Config{
+		Location: *configPath,
+	}
+	if err := cfg.ReadConfig(); err != nil {
 		log.Fatal(err)
 	}
 
-	// Users & Friends
-	users = &friends.Users{}
-	usr := friends.User{
-		Username: "ricl",
+	friands = &friends.Friends{
+		Location: *configFriendsPath,
 	}
-	(*users)[usr.Username] = usr
+	if err := friands.ReadConfig(); err != nil {
+		log.Fatal(err)
+	}
+	return cfg, friands
+}
 
-	frands = &friends.Friends{}
+func main() {
+
+	cfg, friands := loadConfig()
 
 	myself := &friends.Friend{}
 	myself.Username = cfg.Username
@@ -54,33 +70,27 @@ func main() {
 	myself.Port = cfg.RPCPort
 	myself.Token = cfg.Token
 
-	riclava := &friends.Friend{}
-	riclava.Username = "riclava"
-	riclava.Host = "0.0.0.0"
-	riclava.Port = 8071
-	riclava.Token = "3.1415926"
-
-	(*frands)[myself.Username] = *myself
-	(*frands)[riclava.Username] = *riclava
+	friands.Friends[myself.Username] = *myself
 
 	// GRPC
-	go routines.MainRoutine(users, frands, cfg)
+	go routines.MainRoutine(friands, cfg)
 
 	// Process task
-	go routines.TaskProcessRoutine(cfg, myself, frands)
+	go routines.TaskProcessRoutine(cfg, myself, friands)
 
 	// file server
 	http.Handle("/", http.FileServer(http.Dir(cfg.Directory)))
 
 	// API
-	apiHandler, err := handler.CreateAPIHandler(cfg)
+	apiHandler, err := handler.CreateAPIHandler(cfg, friands)
 	if err != nil {
 		log.Fatal(err)
 	}
 	http.Handle("/api/", apiHandler)
 
-	log.Println("\ndds started using config file of", *configPath, "\nwith parameters", cfg.ToString())
-	addr := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
+	log.Println("\ndds started using config file from", cfg.Location, "\nwith parameters", cfg.ToString())
+	log.Println("\nloading friends config from", friands.Location)
+	addr := fmt.Sprintf("%s:%d", "127.0.0.1", cfg.Port)
 	go log.Fatal(http.ListenAndServe(addr, nil))
 
 }

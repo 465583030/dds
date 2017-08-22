@@ -8,7 +8,7 @@ EXEC_NAME="dds"
 PROCESS=${CURRENT_DIR}"/"${EXEC_NAME}
 
 if [ -f "${PROCESS}" ]; then
-    ${PROCESS} --conf=${CURRENT_DIR}"/../conf/config.json"
+    ${PROCESS} --conf=${CURRENT_DIR}"/../conf/config.json" --friends=${CURRENT_DIR}"/../conf/friends.json"
 else
     echo "No such executable file "${PROCESS}" :-("
 fi

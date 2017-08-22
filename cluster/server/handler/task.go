@@ -30,7 +30,7 @@ var files = make(map[string]map[int64]int64)
 
 // TaskHandler handle all task request from node
 type TaskHandler struct {
-	Friends *friends.Friends
+	Friands *friends.Friends
 	Config  *config.Config
 }
 
