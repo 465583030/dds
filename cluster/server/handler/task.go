@@ -47,6 +47,10 @@ func (handler *TaskHandler) HandleFetch(in *ddservice.DDSRequest) ddservice.DDSR
 		}
 	}
 
+	if len(HTTPTaskChannel) == 0 {
+		return *(makeDDSResponse(-1, "I have not task to do"))
+	}
+	// TODO add a lock for channel
 	httpTask := <-HTTPTaskChannel
 	timeKey, err := strconv.ParseInt(httpTask.Filename[strings.LastIndex(httpTask.Filename, "|")+1:len(httpTask.Filename)], 10, 0)
 	if err != nil {
