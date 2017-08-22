@@ -16,7 +16,6 @@ curl -l -H "Content-type: application/json" \
     -X POST \
     -d '{"url":"http://localhost:8099/TencentVideo_V1.0.8.30214.dmg"}' \
     http://localhost:8090/api/v1/task
-
 ```
 - Add friend
 ```bash

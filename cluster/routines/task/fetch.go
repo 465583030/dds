@@ -19,7 +19,7 @@ func doFetch(endpoint string, myself *friends.Friend) {
 
 	r, err := utils.GRPCall(endpoint, myself.Host, constants.CidHTTPTaskFetch, "I want a task to do ;-)")
 	if err != nil {
-		log.Println("error call grpc", err)
+		// maybe friend is not up or removed
 		return
 	}
 
@@ -30,7 +30,11 @@ func doFetch(endpoint string, myself *friends.Friend) {
 		return
 	}
 	if taskResponse.Code != 0 {
-		log.Println("task is invalid")
+		if taskResponse.Code == -2 {
+			// there is not task to process
+		} else {
+			log.Println("task is invalid")
+		}
 		return
 	}
 	var httpTask tasks.HTTPTask
